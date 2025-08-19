@@ -1,15 +1,21 @@
 {
-  "name": "ЕкоЗвернення — Одеський район",
-  "short_name": "ЕкоЗвернення",
+  "name": "Одеський район — ЕкоЗвернення",
+  "short_name": "Одеський район",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0e3c66",
   "icons": [
     {
-      "src": "data:image/svg+xml;utf8,<?xml version='1.0' encoding='UTF-8'?><svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='96' fill='%230e3c66'/><circle cx='256' cy='256' r='138' fill='%2300ffc2'/></svg>",
+      "src": "https://i.ibb.co/HpC70Kdt/svg.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://i.ibb.co/HpC70Kdt/svg.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     }
   ]
