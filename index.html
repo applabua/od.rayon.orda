@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="https://i.ibb.co/HpC70Kdt/svg.png">
 
 <!-- PWA -->
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="manifest" href="manifest.webmanifest?v=3">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
 <!-- Leaflet -->
@@ -26,21 +26,21 @@
     --card:#111319; --line:#1e2330;
     --text:#111; --accent:#00ffc2;
     --hh:64px; /* актуализируется JS */
-    --th:22px; /* актуализируется JS */
+    --th:18px; /* актуализируется JS */
     --shadow:0 14px 40px rgba(0,0,0,.20);
   }
   *{box-sizing:border-box}
-  html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;color:var(--text);background:#fff;overflow:hidden} /* без прокрутки везде */
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;color:var(--text);background:#fff;overflow:hidden} /* без прокрутки */
 
-  /* ===== SPLASH (только лого + ОДНА СТРОКА текста) ===== */
+  /* ===== SPLASH (лаконичный, мелкий текст) ===== */
   .splash{
     position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:9999;
     background:linear-gradient(180deg,var(--blue1),var(--blue2));
   }
-  .splash .box{display:flex;flex-direction:column;align-items:center;gap:18px}
-  .splash .logo{width:min(180px,46vw);height:min(180px,46vw)}
+  .splash .box{display:flex;flex-direction:column;align-items:center;gap:14px}
+  .splash .logo{width:min(160px,44vw);height:min(160px,44vw)}
   .splash .logo img{width:100%;height:100%;object-fit:contain}
-  .splash h1{margin:0;font-size:clamp(18px,4.8vw,28px);font-weight:800;color:#fff;white-space:nowrap} /* ОДНА СТРОКА */
+  .splash h1{margin:0;font-size:clamp(14px,4vw,20px);font-weight:800;color:#fff;white-space:nowrap}
 
   /* ===== HEADER (фикс) ===== */
   header.top{
@@ -60,37 +60,38 @@
   .btn-accent{background:var(--accent);color:#062018;border-color:#00e6b0}
   .btn:active{transform:translateY(1px)}
 
-  /* ===== HELP TITLE (маленький) ===== */
+  /* ===== HELP TITLE (ещё меньше) ===== */
   .title-help{
     position:fixed;left:0;right:0;top:calc(var(--hh));z-index:5;
-    text-align:center;padding:4px 10px;
-    font-size:12px;line-height:1.1;font-weight:700;color:#222; /* меньше и компактнее */
+    text-align:center;padding:2px 10px;
+    font-size:11px;line-height:1.05;font-weight:700;color:#222;
   }
 
-  /* ===== OVERVIEW (область) ===== */
+  /* ===== ЭКРАН 1: только область ===== */
   .overview{
-    position:fixed;left:0;right:0;top:calc(var(--hh) + var(--th));bottom:0; /* без скролла */
+    position:fixed;left:0;right:0;top:calc(var(--hh) + var(--th));bottom:0;
     background:#fff;
   }
   .wrap-img{position:absolute;inset:12px;display:grid;place-items:center}
   .imgbox{position:relative;width:100%;height:100%;max-width:980px;max-height:100%;margin:0 auto;
           border-radius:14px;border:1px solid #e9eef6;overflow:hidden;box-shadow:var(--shadow);background:#fff}
   .imgbox img{position:absolute;inset:0;margin:auto;max-width:100%;max-height:100%;object-fit:contain}
-
-  /* слой клика (SVG) */
-  .hitbox{position:absolute;inset:0;pointer-events:auto;} /* включили события на слой */
+  .hitbox{position:absolute;inset:0;pointer-events:auto}
   .hitbox svg{width:100%;height:100%}
-  .raion{fill:transparent;stroke:none;pointer-events:auto;cursor:pointer}
-  .raion:hover{outline:0}
+  .raion{fill:transparent;stroke:none;cursor:pointer}
 
-  /* ===== Детальная карта района ===== */
+  /* ===== ЭКРАН 2: карта района ===== */
   #map{
-    position:fixed;left:0;right:0;top:calc(var(--hh) + 8px); /* карта чуть ниже хэдера */
+    position:fixed;left:0;right:0;top:calc(var(--hh) + 8px);z-index:10;
+    height:calc(100svh - var(--hh) - 12px); /* svh для мобильных; ниже фолбэки */
     height:calc(100dvh - var(--hh) - 12px);
-    display:none; max-width:980px; margin:0 auto;
-    border-radius:14px; overflow:hidden; box-shadow:var(--shadow); border:1px solid #e9eef6; background:#f7f9fc;
+    height:calc(100vh - var(--hh) - 12px);
+    min-height:320px;
+    display:none; width:100%; max-width:980px; margin:0 auto;
+    border-radius:14px; overflow:hidden; box-shadow:var(--shadow); border:1px solid #e9eef6; background:#eef3fa;
   }
   #map.active{display:block}
+  .leaflet-container{background:#eef3fa}
   .leaflet-control-attribution{display:none}
 
   /* ===== Modal ===== */
@@ -140,7 +141,7 @@
 <!-- Маленький текст над картой -->
 <h2 class="title-help" id="helpTitle">Натисніть на Одеський район, щоб відкрити мапу та подати звернення</h2>
 
-<!-- ЭКРАН 1: обзор области (фикс, без скролла) -->
+<!-- ЭКРАН 1: обзор области -->
 <section class="overview" id="overview">
   <div class="wrap-img">
     <div class="imgbox">
@@ -148,7 +149,6 @@
            alt="Одеська область — райони та громади">
       <div class="hitbox" aria-hidden="true">
         <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-          <!-- Контур правого «розового» району (кликабельно) -->
           <polygon class="raion" id="odesaRaionPoly"
             points="72,68 69,70 66,72 62,75 58,78 55,80 51,81 47,80 44,78 41,75 38,71 36,67 36,63 37,59 40,55 43,52 47,50 51,49 55,49 59,50 62,52 65,55 67,58 70,62" />
         </svg>
@@ -202,8 +202,8 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 }
 
-/* ===== Splash 5s ===== */
-setTimeout(()=>{ const s=document.getElementById('splash'); if(s) s.style.display='none'; }, 5000);
+/* ===== Splash короткий ===== */
+setTimeout(()=>{ const s=document.getElementById('splash'); if(s) s.style.display='none'; }, 3000);
 
 /* ===== высоты (фикс-экраны) ===== */
 function setHeights(){
@@ -225,7 +225,9 @@ function toMapView() {
   helpTitle.style.display='none';
   mapEl.classList.add('active');
   initMapOnce();
-  setTimeout(()=>{ if(map){ map.invalidateSize(); } }, 120); // после появления обязательно
+  setTimeout(()=>{ if(map){ map.invalidateSize(); } }, 220); // после появления — пересчитать размер
+  // Автозапрос геопозиции при входе на карту (на телефоне)
+  askForGeo();
 }
 document.getElementById('odesaRaionPoly').addEventListener('click', toMapView);
 
@@ -237,7 +239,6 @@ const persist = () => localStorage.setItem(STORE_KEY, JSON.stringify(reports));
 /* ===== Leaflet map (увеличенный район) ===== */
 let map, markers=new Map(), addMode=false, staged=null, inited=false;
 
-/* геоконтур района для ограничения */
 const ODESA_RAION_POLY = [
   [46.705, 30.280], [46.790, 30.430], [46.865, 30.650], [46.925, 30.900],
   [46.920, 31.150], [46.820, 31.250], [46.700, 31.300], [46.560, 31.250],
@@ -268,25 +269,27 @@ function initMapOnce(){
     maxBounds: bounds.pad(0.05), maxBoundsViscosity:1.0
   }).fitBounds(bounds);
 
-  /* Реальные тайлы OSM */
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    { attribution:'© OpenStreetMap' }).addTo(map);
+  const base = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    { attribution:'© OpenStreetMap', detectRetina:true, updateWhenIdle:true, updateWhenZooming:false });
+  base.on('tileerror', ()=> toast('Не вдалося завантажити тайли мапи. Перевірте інтернет.'));
+  base.addTo(map);
 
-  /* Подсветка района + маска вокруг */
   L.polygon(ODESA_RAION_POLY, {color:'#2b2f3a', weight:1.2, fill:true, fillColor:'#0f1116', fillOpacity:.18}).addTo(map);
   (function mask(){
     const world=[[-90,-180],[-90,180],[90,180],[90,-180]];
     L.polygon([world, ODESA_RAION_POLY], {color:'#000',weight:0,fill:true,fillColor:'#000',fillOpacity:.22,interactive:false}).addTo(map);
   })();
 
-  /* Клик по карте — открывает форму, если включён режим добавления */
   map.on('click', e=>{
     if(!bounds.contains(e.latlng)) return;
     if(addMode) openModal(e.latlng);
   });
 
-  /* восстановить сохранённые метки */
   reports.forEach(addMarker);
+
+  // На случай ленивого layout
+  setTimeout(()=>{ map.invalidateSize(); }, 500);
+  window.addEventListener('orientationchange', ()=> setTimeout(()=>map.invalidateSize(), 300));
 }
 
 /* Маркеры */
@@ -304,26 +307,32 @@ function addMarker(rep){
   markers.set(rep.id, m);
 }
 
-/* Верхние кнопки */
+/* Утилита показа карты перед выполнением действия */
 function ensureMapThen(fn){
   if(!mapEl.classList.contains('active')) toMapView();
-  setTimeout(fn, 80);
+  setTimeout(fn, 150);
 }
 
-/* Геопозиция */
-document.getElementById('btnMyPos').onclick = ()=> ensureMapThen(()=>{
-  if(!navigator.geolocation){ toast('Геопозиція недоступна. Оберіть точку вручну.'); return; }
+/* Геопозиция: при входе на карту и по кнопке — запрос и выделение точки */
+function askForGeo(){
+  if(!navigator.geolocation) { return; }
   navigator.geolocation.getCurrentPosition(pos=>{
     const latlng = L.latLng(pos.coords.latitude, pos.coords.longitude);
     if(!bounds.contains(latlng)){
-      toast('Поза межами району. Оберіть точку на мапі.'); map.fitBounds(bounds); return;
+      toast('Ви поза межами району. Оберіть точку на мапі.');
+      map.fitBounds(bounds);
+      return;
     }
     map.setView(latlng, 16);
-    openModal(latlng);
-  }, ()=>toast('Не вдалося визначити геопозицію. Дозвольте доступ або натисніть на мапі.'), {enableHighAccuracy:true, timeout:9000, maximumAge:0});
-});
+    openModal(latlng); // сразу предлагаем підтвердити звернення
+  }, ()=>{
+    // тихо, без тоста — пользователь может запретить доступ
+  }, {enableHighAccuracy:true, timeout:9000, maximumAge:0});
+}
 
-/* Позначити на мапі */
+/* Кнопки */
+document.getElementById('btnMyPos').onclick = ()=> ensureMapThen(()=> askForGeo());
+
 document.getElementById('btnMark').onclick = ()=> ensureMapThen(()=>{
   addMode = true;
   toast('Режим позначення: торкніться мапи, щоб вибрати точку');
