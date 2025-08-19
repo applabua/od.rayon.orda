@@ -25,12 +25,14 @@
     --blue1:#0e3c66; --blue2:#163b5f;
     --card:#111319; --line:#1e2330;
     --text:#111; --accent:#00ffc2;
-    --shadow:0 14px 40px rgba(0,0,0,.45);
+    --hh:64px; /* header height (js актуализирует) */
+    --th:28px; /* title-help height (js актуализирует) */
+    --shadow:0 14px 40px rgba(0,0,0,.20);
   }
   *{box-sizing:border-box}
-  html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;color:var(--text);background:#fff;overflow:hidden} /* без прокрутки */
 
-  /* ===== SPLASH (только лого + большой текст; без рамок) ===== */
+  /* ===== SPLASH (только лого + ОДНА СТРОКА текста) ===== */
   .splash{
     position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:9999;
     background:linear-gradient(180deg,var(--blue1),var(--blue2));
@@ -38,18 +40,18 @@
   .splash .box{display:flex;flex-direction:column;align-items:center;gap:18px}
   .splash .logo{width:min(180px,46vw);height:min(180px,46vw)}
   .splash .logo img{width:100%;height:100%;object-fit:contain}
-  .splash h1{margin:0;font-size:clamp(20px,5vw,30px);font-weight:800;color:#fff;text-align:center}
+  .splash h1{margin:0;font-size:clamp(20px,5vw,30px);font-weight:800;color:#fff;white-space:nowrap}
 
-  /* ===== HEADER ===== */
+  /* ===== HEADER (фикс) ===== */
   header.top{
-    position:sticky;top:0;z-index:20;
+    position:fixed;left:0;right:0;top:0;z-index:20;
     background:linear-gradient(180deg,var(--blue1),var(--blue2));
     border-bottom:1px solid rgba(255,255,255,.2);
     padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;color:#fff
   }
   .brand{display:flex;align-items:center;gap:10px}
   .brand img{height:28px}
-  .brand b{font-size:14px}
+  .brand b{font-size:14px;white-space:nowrap}
   .actions{display:flex;gap:8px}
   .btn{
     appearance:none;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;
@@ -58,26 +60,40 @@
   .btn-accent{background:var(--accent);color:#062018;border-color:#00e6b0}
   .btn:active{transform:translateY(1px)}
 
+  /* ===== HELP TITLE (маленький, центр) ===== */
+  .title-help{
+    position:fixed;left:0;right:0;top:calc(var(--hh));z-index:5;
+    text-align:center;padding:6px 12px;
+    font-size:14px;font-weight:800;color:#111;
+  }
+
   /* ===== OVERVIEW (область) ===== */
-  .overview{background:#fff;min-height:calc(100vh - 50px)}
-  .title-help{max-width:900px;margin:18px auto 6px;padding:0 12px;text-align:center;
-    color:#111;font-weight:800}
-  .wrap-img{position:relative;max-width:900px;margin:0 auto;padding:12px}
-  .wrap-img img{width:100%;border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,.08);border:1px solid #e9eef6}
-  .hitbox{position:absolute;inset:12px;pointer-events:none}
+  .overview{
+    position:fixed;left:0;right:0;top:calc(var(--hh) + var(--th));bottom:0; /* без скролла */
+    background:#fff;
+  }
+  .wrap-img{position:absolute;inset:12px;display:grid;place-items:center}
+  .imgbox{position:relative;width:100%;height:100%;max-width:980px;max-height:100%;margin:0 auto;
+          border-radius:14px;border:1px solid #e9eef6;overflow:hidden;box-shadow:var(--shadow);background:#fff}
+  .imgbox img{position:absolute;inset:0;margin:auto;max-width:100%;max-height:100%;object-fit:contain}
+  .hitbox{position:absolute;inset:0;pointer-events:none}
   .hitbox svg{width:100%;height:100%}
-  /* прозрачный кликабельный контур (ОДЕССКИЙ РАЙОН — правее, «розовый» на скрине) */
+  /* прозрачный кликабельный контур (ОДЕССКИЙ РАЙОН — правее, «розовый») */
   .raion{fill:transparent;stroke:none;pointer-events:auto;cursor:pointer}
 
   /* ===== Детальная карта района ===== */
-  #map{height:72vh;display:none; margin:12px auto 24px; max-width:900px; border-radius:14px;
-       overflow:hidden; box-shadow:0 10px 28px rgba(0,0,0,.12); border:1px solid #e9eef6}
+  #map{
+    position:fixed;left:0;right:0;top:calc(var(--hh) + 8px); /* опустили ниже хэдера */
+    height:calc(100dvh - var(--hh) - 12px);
+    display:none; max-width:980px; margin:0 auto; right:0; left:0;
+    border-radius:14px; overflow:hidden; box-shadow:var(--shadow); border:1px solid #e9eef6; background:#f7f9fc;
+  }
   #map.active{display:block}
   .leaflet-control-attribution{display:none}
 
   /* ===== Modal ===== */
   .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);display:none;z-index:900;align-items:center;justify-content:center}
-  .modal{width:min(520px,92vw);background:#111319;border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:var(--shadow);color:#fff}
+  .modal{width:min(520px,92vw);background:#111319;border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 14px 40px rgba(0,0,0,.45);color:#fff}
   .modal h3{margin:0 0 8px}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   label{font-size:12px;color:#d7dde9}
@@ -89,13 +105,12 @@
   .row{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
   .toast{
     position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:1000;
-    background:#103521;color:#caffdb;border:1px solid #1d5f43;padding:10px 14px;border-radius:12px;box-shadow:var(--shadow);display:none
+    background:#103521;color:#caffdb;border:1px solid #1d5f43;padding:10px 14px;border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.35);display:none
   }
 
   @media (max-width:720px){
     .grid{grid-template-columns:1fr}
     .brand b{display:none}
-    #map{height:64vh}
   }
 </style>
 </head>
@@ -109,7 +124,7 @@
   </div>
 </div>
 
-<header class="top">
+<header class="top" id="topbar">
   <div class="brand">
     <img src="https://i.ibb.co/HpC70Kdt/svg.png" alt="">
     <b>Одеський район — ЕкоЗвернення</b>
@@ -120,25 +135,27 @@
   </div>
 </header>
 
-<!-- Заголовок-подсказка над обзорной картой (по центру, без рамки) -->
+<!-- Маленький текст над картой -->
 <h2 class="title-help" id="helpTitle">Натисніть на Одеський район, щоб відкрити мапу та подати звернення</h2>
 
-<!-- ЭКРАН 1: обзор области -->
+<!-- ЭКРАН 1: обзор области (фикс, без скролла) -->
 <section class="overview" id="overview">
   <div class="wrap-img">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/b/b7/%D0%9A%D0%B0%D1%80%D1%82%D0%B0_%D1%80%D0%B0%D0%B9%D0%BE%D0%BD%D1%96%D0%B2_%D1%82%D0%B0_%D0%B3%D1%80%D0%BE%D0%BC%D0%B0%D0%B4_%D0%9E%D0%B4%D0%B5%D1%81%D1%8C%D0%BA%D0%BE%D1%97_%D0%BE%D0%B1%D0%BB%D0%B0%D1%81%D1%82%D1%96.jpg"
-         alt="Одеська область — райони та громади">
-    <div class="hitbox" aria-hidden="true">
-      <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-        <!-- ОБНОВЛЁННЫЙ контур: правый «розовый» район на твоём скрине -->
-        <polygon class="raion" id="odesaRaionPoly"
-          points="72,68 69,70 66,72 62,75 58,78 55,80 51,81 47,80 44,78 41,75 38,71 36,67 36,63 37,59 40,55 43,52 47,50 51,49 55,49 59,50 62,52 65,55 67,58 70,62" />
-      </svg>
+    <div class="imgbox">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/b/b7/%D0%9A%D0%B0%D1%80%D1%82%D0%B0_%D1%80%D0%B0%D0%B9%D0%BE%D0%BD%D1%96%D0%B2_%D1%82%D0%B0_%D0%B3%D1%80%D0%BE%D0%BC%D0%B0%D0%B4_%D0%9E%D0%B4%D0%B5%D1%81%D1%8C%D0%BA%D0%BE%D1%97_%D0%BE%D0%B1%D0%BB%D0%B0%D1%81%D1%82%D1%96.jpg"
+           alt="Одеська область — райони та громади">
+      <div class="hitbox" aria-hidden="true">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+          <!-- ОБНОВЛЁННЫЙ контур: правый «розовый» район -->
+          <polygon class="raion" id="odesaRaionPoly"
+            points="72,68 69,70 66,72 62,75 58,78 55,80 51,81 47,80 44,78 41,75 38,71 36,67 36,63 37,59 40,55 43,52 47,50 51,49 55,49 59,50 62,52 65,55 67,58 70,62" />
+        </svg>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ЭКРАН 2: карта района (другая, увеличенная) -->
+<!-- ЭКРАН 2: реальная интерактивная карта района -->
 <div id="map"></div>
 
 <!-- Модальне вікно -->
@@ -186,6 +203,16 @@ if ('serviceWorker' in navigator) {
 /* ===== Splash 5s ===== */
 setTimeout(()=>{ document.getElementById('splash').style.display='none'; }, 5000);
 
+/* ===== высоты (фикс-экраны) ===== */
+function setHeights(){
+  const hh = document.getElementById('topbar').offsetHeight || 60;
+  const th = document.getElementById('helpTitle').offsetHeight || 0;
+  document.documentElement.style.setProperty('--hh', hh+'px');
+  document.documentElement.style.setProperty('--th', th+'px');
+}
+window.addEventListener('load', setHeights);
+window.addEventListener('resize', setHeights);
+
 /* ===== Экраны ===== */
 const overview = document.getElementById('overview');
 const helpTitle = document.getElementById('helpTitle');
@@ -196,6 +223,7 @@ function toMapView() {
   helpTitle.style.display='none';
   mapEl.classList.add('active');
   initMapOnce();
+  setTimeout(()=>{ map.invalidateSize(); }, 80); // после появления обязательно
 }
 document.getElementById('odesaRaionPoly').addEventListener('click', toMapView);
 
@@ -207,7 +235,7 @@ const persist = () => localStorage.setItem(STORE_KEY, JSON.stringify(reports));
 /* ===== Leaflet map (увеличенный район) ===== */
 let map, markers=new Map(), addMode=false, staged=null, inited=false;
 
-/* Приближённый геоконтур района для ограничения карты (тот же, но фокус+fitBounds) */
+/* геоконтур района для ограничения */
 const ODESA_RAION_POLY = [
   [46.705, 30.280], [46.790, 30.430], [46.865, 30.650], [46.925, 30.900],
   [46.920, 31.150], [46.820, 31.250], [46.700, 31.300], [46.560, 31.250],
@@ -238,14 +266,14 @@ function initMapOnce(){
     maxBounds: bounds.pad(0.05), maxBoundsViscosity:1.0
   }).fitBounds(bounds);
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png',
-    { attribution:'© OSM & CARTO' }).addTo(map);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    { attribution:'© OpenStreetMap' }).addTo(map);
 
   // Подсветка района + маска вокруг
-  L.polygon(ODESA_RAION_POLY, {color:'#2b2f3a', weight:1.2, fill:true, fillColor:'#0f1116', fillOpacity:.22}).addTo(map);
+  L.polygon(ODESA_RAION_POLY, {color:'#2b2f3a', weight:1.2, fill:true, fillColor:'#0f1116', fillOpacity:.18}).addTo(map);
   (function mask(){
     const world=[[-90,-180],[-90,180],[90,180],[90,-180]];
-    L.polygon([world, ODESA_RAION_POLY], {color:'#000',weight:0,fill:true,fillColor:'#000',fillOpacity:.28,interactive:false}).addTo(map);
+    L.polygon([world, ODESA_RAION_POLY], {color:'#000',weight:0,fill:true,fillColor:'#000',fillOpacity:.22,interactive:false}).addTo(map);
   })();
 
   // Клик по карте — открывает форму, если включён режим добавления
@@ -254,7 +282,7 @@ function initMapOnce(){
     if(addMode) openModal(e.latlng);
   });
 
-  // Восстановить ранее сохранённые метки
+  // восстановить сохранённые метки
   reports.forEach(addMarker);
 }
 
@@ -276,7 +304,7 @@ function addMarker(rep){
 /* Верхние кнопки */
 function ensureMapThen(fn){
   if(!mapEl.classList.contains('active')) toMapView();
-  setTimeout(fn, 50);
+  setTimeout(fn, 60);
 }
 
 /* Геопозиция: вызывается на телефоне по нажатию */
@@ -292,7 +320,7 @@ document.getElementById('btnMyPos').onclick = ()=> ensureMapThen(()=>{
   }, ()=>toast('Не вдалося визначити геопозицію. Дозвольте доступ або натисніть на мапі.'), {enableHighAccuracy:true, timeout:9000, maximumAge:0});
 });
 
-/* Позначити на мапі: всегда ВКЛЮЧИТЬ режим добавления */
+/* Позначити на мапі: всегда включает режим добавления */
 document.getElementById('btnMark').onclick = ()=> ensureMapThen(()=>{
   addMode = true;
   toast('Режим позначення: торкніться мапи, щоб вибрати точку');
@@ -306,7 +334,7 @@ function openModal(latlng){
   modal.style.display='flex';
 }
 function closeModal(){
-  modal.style.display='none'; staged=null; addMode=false; /* после отправки/отмены выходим из режима */
+  modal.style.display='none'; staged=null; addMode=false; /* выход из режима после закрытия */
   document.getElementById('place').value='';
   document.getElementById('comment').value='';
   document.getElementById('coords').value='';
