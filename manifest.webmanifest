@@ -7,16 +7,16 @@
   "theme_color": "#0e3c66",
   "icons": [
     {
-      "src": "https://i.ibb.co/HpC70Kdt/svg.png",
+      "src": "icons/logo-192-maskable.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
-      "src": "https://i.ibb.co/HpC70Kdt/svg.png",
+      "src": "icons/logo-512-maskable.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ]
 }
