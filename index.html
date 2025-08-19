@@ -6,17 +6,17 @@
 <title>Одеський район — ЕкоЗвернення</title>
 <meta name="theme-color" content="#0e3c66" />
 
-<!-- App icons -->
+<!-- App icons (только логотип без фона) -->
 <link rel="icon" type="image/png" sizes="32x32" href="https://i.ibb.co/HpC70Kdt/svg.png">
 <link rel="apple-touch-icon" href="https://i.ibb.co/HpC70Kdt/svg.png">
 
 <!-- PWA -->
-<link rel="manifest" href="manifest.webmanifest?v=3">
+<link rel="manifest" href="manifest.webmanifest?v=4">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
@@ -78,12 +78,15 @@
   .imgbox img{position:absolute;inset:0;margin:auto;max-width:100%;max-height:100%;object-fit:contain}
   .hitbox{position:absolute;inset:0;pointer-events:auto}
   .hitbox svg{width:100%;height:100%}
-  .raion{fill:transparent;stroke:none;cursor:pointer}
+  .raion{
+    fill:rgba(0,0,0,0.001); /* кликабельная зона */
+    stroke:none; cursor:pointer; pointer-events:auto;
+  }
 
   /* ===== ЭКРАН 2: карта района ===== */
   #map{
     position:fixed;left:0;right:0;top:calc(var(--hh) + 8px);z-index:10;
-    height:calc(100svh - var(--hh) - 12px); /* svh для мобильных; ниже фолбэки */
+    height:calc(100svh - var(--hh) - 12px);
     height:calc(100dvh - var(--hh) - 12px);
     height:calc(100vh - var(--hh) - 12px);
     min-height:320px;
@@ -224,10 +227,10 @@ function toMapView() {
   overview.style.display='none';
   helpTitle.style.display='none';
   mapEl.classList.add('active');
+  setHeights();           // пересчёт высот сразу при показе карты
   initMapOnce();
-  setTimeout(()=>{ if(map){ map.invalidateSize(); } }, 220); // после появления — пересчитать размер
-  // Автозапрос геопозиции при входе на карту (на телефоне)
-  askForGeo();
+  setTimeout(()=>{ if(map){ map.invalidateSize(); } }, 220);
+  askForGeo();            // автозапрос гео при входе на карту
 }
 document.getElementById('odesaRaionPoly').addEventListener('click', toMapView);
 
@@ -238,7 +241,9 @@ const persist = () => localStorage.setItem(STORE_KEY, JSON.stringify(reports));
 
 /* ===== Leaflet map (увеличенный район) ===== */
 let map, markers=new Map(), addMode=false, staged=null, inited=false;
+let bounds, TrashIcon;
 
+// Контур району (грубая аппроксимация)
 const ODESA_RAION_POLY = [
   [46.705, 30.280], [46.790, 30.430], [46.865, 30.650], [46.925, 30.900],
   [46.920, 31.150], [46.820, 31.250], [46.700, 31.300], [46.560, 31.250],
@@ -246,23 +251,37 @@ const ODESA_RAION_POLY = [
   [46.280, 30.520], [46.300, 30.360], [46.380, 30.280], [46.520, 30.240],
   [46.620, 30.240], [46.680, 30.250], [46.705, 30.280]
 ];
-const bounds = L.latLngBounds(ODESA_RAION_POLY.map(p=>[p[0],p[1]]));
 
-const TrashIcon = L.divIcon({
-  className:'trash-pin',
-  html:`<div style="width:22px;height:22px;border-radius:50%;background:#0f1116;border:2px solid ${getComputedStyle(document.documentElement).getPropertyValue('--accent')};
-    display:flex;align-items:center;justify-content:center;box-shadow:0 6px 14px rgba(0,0,0,.4)">
-      <svg viewBox="0 0 24 24" width="12" height="12" fill="none">
-        <path d="M8 6h8l-1 14H9L8 6z" stroke="#00ffc2" stroke-width="1.6"/>
-        <path d="M6 6h12M10 6V4h4v2" stroke="#00ffc2" stroke-width="1.6"/>
-      </svg>
-    </div>`,
-  iconSize:[22,22], iconAnchor:[11,22], popupAnchor:[0,-18]
-});
+// Ждём, пока Leaflet загрузится (скрипт с defer)
+function leafletReady(){
+  return new Promise(resolve=>{
+    if (window.L) return resolve();
+    const t = setInterval(()=>{
+      if (window.L){ clearInterval(t); resolve(); }
+    }, 30);
+    // запасной таймаут — почти не нужен, но чтоб не зависнуть
+    setTimeout(()=>{ clearInterval(t); resolve(); }, 5000);
+  });
+}
 
-function initMapOnce(){
+async function initMapOnce(){
   if(inited) return;
-  inited = true;
+  await leafletReady();       // гарантия наличия window.L
+
+  // вычисляем границы только теперь, когда L есть
+  bounds = L.latLngBounds(ODESA_RAION_POLY.map(p=>[p[0],p[1]]));
+
+  TrashIcon = L.divIcon({
+    className:'trash-pin',
+    html:`<div style="width:22px;height:22px;border-radius:50%;background:#0f1116;border:2px solid ${getComputedStyle(document.documentElement).getPropertyValue('--accent')};
+      display:flex;align-items:center;justify-content:center;box-shadow:0 6px 14px rgba(0,0,0,.4)">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none">
+          <path d="M8 6h8l-1 14H9L8 6z" stroke="#00ffc2" stroke-width="1.6"/>
+          <path d="M6 6h12M10 6V4h4v2" stroke="#00ffc2" stroke-width="1.6"/>
+        </svg>
+      </div>`,
+    iconSize:[22,22], iconAnchor:[11,22], popupAnchor:[0,-18]
+  });
 
   map = L.map('map', {
     zoomControl:true, minZoom:10, maxZoom:18,
@@ -275,6 +294,8 @@ function initMapOnce(){
   base.addTo(map);
 
   L.polygon(ODESA_RAION_POLY, {color:'#2b2f3a', weight:1.2, fill:true, fillColor:'#0f1116', fillOpacity:.18}).addTo(map);
+
+  // маска за пределами району (не перехватывает клики)
   (function mask(){
     const world=[[-90,-180],[-90,180],[90,180],[90,-180]];
     L.polygon([world, ODESA_RAION_POLY], {color:'#000',weight:0,fill:true,fillColor:'#000',fillOpacity:.22,interactive:false}).addTo(map);
@@ -285,11 +306,14 @@ function initMapOnce(){
     if(addMode) openModal(e.latlng);
   });
 
+  // поднять из localStorage
   reports.forEach(addMarker);
 
-  // На случай ленивого layout
+  // на всякий случай
   setTimeout(()=>{ map.invalidateSize(); }, 500);
   window.addEventListener('orientationchange', ()=> setTimeout(()=>map.invalidateSize(), 300));
+
+  inited = true;
 }
 
 /* Маркеры */
@@ -307,7 +331,7 @@ function addMarker(rep){
   markers.set(rep.id, m);
 }
 
-/* Утилита показа карты перед выполнением действия */
+/* Утилита: показать карту перед действием */
 function ensureMapThen(fn){
   if(!mapEl.classList.contains('active')) toMapView();
   setTimeout(fn, 150);
@@ -326,13 +350,12 @@ function askForGeo(){
     map.setView(latlng, 16);
     openModal(latlng); // сразу предлагаем підтвердити звернення
   }, ()=>{
-    // тихо, без тоста — пользователь может запретить доступ
+    // користувач міг відхилити — без тосту
   }, {enableHighAccuracy:true, timeout:9000, maximumAge:0});
 }
 
 /* Кнопки */
 document.getElementById('btnMyPos').onclick = ()=> ensureMapThen(()=> askForGeo());
-
 document.getElementById('btnMark').onclick = ()=> ensureMapThen(()=>{
   addMode = true;
   toast('Режим позначення: торкніться мапи, щоб вибрати точку');
