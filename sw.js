@@ -1,6 +1,6 @@
 // Сервис-воркер для GitHub Pages (офлайн ядро + runtime cache)
-const CACHE = 'eko-odrra-v7'; // обновили версию кэша
-const CORE = ['./','./index.html','./manifest.webmanifest?v=3'];
+const CACHE = 'eko-odrra-v8'; // ↑ версия кэша
+const CORE = ['./','./index.html','./manifest.webmanifest?v=4'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)));
@@ -13,6 +13,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
+
   // Network-first для HTML
   if (req.destination === 'document' || req.headers.get('accept')?.includes('text/html')) {
     e.respondWith(
@@ -21,6 +22,7 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
+
   // Cache-first для статики (вкл. CDN)
   e.respondWith(
     caches.match(req).then(r => r || fetch(req).then(res => { caches.open(CACHE).then(c => c.put(req, res.clone())); return res; }).catch(() => r))
