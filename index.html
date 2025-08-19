@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>ЕкоЗвернення — Одеський район</title>
+<meta name="theme-color" content="#0e3c66" />
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<?xml version='1.0' encoding='UTF-8'?><svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect width='128' height='128' rx='24' fill='%230e3c66'/><circle cx='64' cy='64' r='34' fill='%2300ffc2'/></svg>">
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --blue1:#0e3c66; --blue2:#163b5f; /* header gradient як на скріні */
+    --bg:#0b0c0f; --card:#111319; --line:#1e2330;
+    --text:#ffffff; --sub:#bfc7d4; --accent:#00ffc2; --danger:#ff5d79;
+    --rad:16px; --shadow:0 14px 40px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;color:var(--text);background:#fff}
+  img{max-width:100%;display:block}
+
+  /* ===== SPLASH ===== */
+  .splash{
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:9999;
+    background:linear-gradient(180deg,var(--blue1),var(--blue2));
+  }
+  .splash .box{
+    display:flex;flex-direction:column;align-items:center;gap:14px;
+    background:rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.22);
+    padding:18px 22px;border-radius:18px;box-shadow:var(--shadow);backdrop-filter:blur(6px)
+  }
+  .splash .logo{
+    width:88px;height:88px;border-radius:18px;background:rgba(255,255,255,.08);
+    display:grid;place-items:center;border:1px solid rgba(255,255,255,.25);overflow:hidden
+  }
+  .splash .logo img{width:100%;height:100%;object-fit:contain}
+  .splash h1{margin:0;font-size:18px;font-weight:800;letter-spacing:.2px;color:#fff;text-align:center}
+
+  /* ===== HEADER (тонкая полоса как на odrda.od.gov.ua) ===== */
+  header.top{
+    position:sticky;top:0;z-index:20;
+    background:linear-gradient(180deg,var(--blue1),var(--blue2));
+    border-bottom:1px solid rgba(255,255,255,.2);
+    padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px
+  }
+  .brand{display:flex;align-items:center;gap:10px;color:#fff}
+  .brand img{height:28px}
+  .brand b{font-size:14px}
+  .actions{display:flex;gap:8px}
+  .btn{
+    appearance:none;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;
+    padding:9px 12px;border-radius:12px;font-weight:800;cursor:pointer;backdrop-filter:blur(4px)
+  }
+  .btn-accent{background:var(--accent);color:#062018;border-color:#00e6b0}
+  .btn:active{transform:translateY(1px)}
+
+  /* ===== OVERVIEW (Одесская область на белом фоне) ===== */
+  .overview{background:#fff;min-height:calc(100vh - 50px);display:none}
+  .overview.active{display:block}
+  .map-image{
+    position:relative;max-width:1200px;margin:0 auto;padding:12px
+  }
+  .map-image img{width:100%;border:1px solid #e9eef6;border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,.08)}
+  /* Кликабельний контур Одеського району поверх картинки (прибл. контур у відсотках контейнера) */
+  .hitbox{
+    position:absolute;inset:12px;border-radius:14px; /* поверх картинки */
+    pointer-events:none;
+  }
+  .hitbox svg{width:100%;height:100%}
+  .raion{
+    fill:rgba(0,255,194,0.18);stroke:#00bfa3;stroke-width:2;cursor:pointer;pointer-events:auto;
+    filter:drop-shadow(0 4px 8px rgba(0,0,0,.15))
+  }
+  .callout{position:absolute;left:16px;bottom:16px;background:#0f1116;color:#fff;padding:10px 12px;border-radius:12px;border:1px solid #1f2430}
+
+  /* ===== MAP (детальна мапа району) ===== */
+  #map{height:calc(100vh - 50px);display:none}
+  #map.active{display:block}
+  /* Дві кнопки (внизу праворуч) */
+  .fab{position:fixed;right:12px;bottom:12px;z-index:500;display:flex;flex-direction:column;gap:8px}
+  .chip{
+    background:#0f1116;color:#fff;border:1px solid #222a3a;border-radius:14px;padding:10px 12px;font-weight:800;cursor:pointer;
+    box-shadow:var(--shadow)
+  }
+
+  /* ===== Modal ===== */
+  .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);display:none;z-index:900;align-items:center;justify-content:center}
+  .modal{width:min(520px,92vw);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:var(--shadow);color:#fff}
+  .modal h3{margin:0 0 8px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  label{font-size:12px;color:#d7dde9}
+  input[type="text"],textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0f1116;color:#fff}
+  textarea{min-height:88px;resize:vertical}
+  .uploader{border:1px dashed var(--line);border-radius:10px;padding:10px;background:#0f1116;text-align:center}
+  .uploader input{display:none}
+  .uploader img{max-width:100%;border-radius:8px;border:1px solid var(--line);margin-top:6px}
+  .modal .row{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+  .toast{
+    position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:1000;
+    background:#103521;color:#caffdb;border:1px solid #1d5f43;padding:10px 14px;border-radius:12px;box-shadow:var(--shadow);display:none
+  }
+
+  /* Mobile tweaks */
+  @media (max-width:720px){
+    .grid{grid-template-columns:1fr}
+    .brand b{display:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- Splash -->
+<div class="splash" id="splash">
+  <div class="box">
+    <div class="logo"><img src="https://i.ibb.co/HpC70Kdt/svg.png" alt="Логотип"></div>
+    <h1>Одеська районна державна адміністрація</h1>
+  </div>
+</div>
+
+<header class="top">
+  <div class="brand">
+    <img src="https://i.ibb.co/HpC70Kdt/svg.png" alt="">
+    <b>ЕкоЗвернення — Одеський район</b>
+  </div>
+  <div class="actions">
+    <!-- Эти кнопки активны только на детальной карте -->
+    <button class="btn" id="btnMyPos">Моя геопозиція</button>
+    <button class="btn btn-accent" id="btnMark">Позначити на карті</button>
+  </div>
+</header>
+
+<!-- ЭКРАН 1: Обзор области с белым фоном -->
+<section class="overview active" id="overview">
+  <div class="map-image">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/b/b7/%D0%9A%D0%B0%D1%80%D1%82%D0%B0_%D1%80%D0%B0%D0%B9%D0%BE%D0%BD%D1%96%D0%B2_%D1%82%D0%B0_%D0%B3%D1%80%D0%BE%D0%BC%D0%B0%D0%B4_%D0%9E%D0%B4%D0%B5%D1%81%D1%8C%D0%BA%D0%BE%D1%97_%D0%BE%D0%B1%D0%BB%D0%B0%D1%81%D1%82%D1%96.jpg"
+         alt="Одеська область — райони та громади">
+    <!-- Кликабельний контур Одеського району (приблизно по картинці) -->
+    <div class="hitbox" aria-hidden="true">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+        <!-- Полігон підігнано під центральну прибережну частину — Одеський район -->
+        <polygon class="raion" id="odesaRaionPoly"
+          points="58,63 54,66 49,72 45,78 41,83 37,85 33,82 29,78 26,73 24,67 24,60 27,55 31,51 36,48 40,46 45,45 50,45 54,47 58,50 61,54 61,59" />
+      </svg>
+    </div>
+    <div class="callout">Натисніть на <b>Одеський район</b>, щоб відкрити детальну мапу та подати звернення.</div>
+  </div>
+</section>
+
+<!-- ЭКРАН 2: Детальна мапа району -->
+<div id="map"></div>
+<div class="fab" id="fab" style="display:none">
+  <!-- дубль на випадок, якщо хедер перекритий на малих екранах -->
+  <div class="chip" id="chipMyPos">Моя геопозиція</div>
+  <div class="chip" id="chipMark">Позначити на карті</div>
+</div>
+
+<!-- Модальне вікно -->
+<div class="backdrop" id="modal">
+  <div class="modal">
+    <h3>Повідомити про сміттєзвалище</h3>
+    <div class="grid" style="margin-top:6px">
+      <div>
+        <label>Координати</label>
+        <input id="coords" type="text" readonly>
+      </div>
+      <div>
+        <label>Населений пункт (необов'язково)</label>
+        <input id="place" type="text" placeholder="Таїрове / Авангард / Доброслав …">
+      </div>
+      <div style="grid-column:1/-1">
+        <label>Коментар</label>
+        <textarea id="comment" placeholder="Опишіть місце, орієнтири, обсяг відходів тощо."></textarea>
+      </div>
+      <div style="grid-column:1/-1">
+        <label>Фото</label>
+        <div class="uploader">
+          <label for="photoInput" style="cursor:pointer"><span style="border:1px solid var(--line);padding:4px 8px;border-radius:999px;">Додати фото</span></label>
+          <input id="photoInput" type="file" accept="image/*" capture="environment">
+          <div id="photoPreview"></div>
+        </div>
+        <div class="meta" style="margin-top:6px">Фото стискається до ~1024px і зберігається лише у вашому браузері.</div>
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn" id="btnCancel">Скасувати</button>
+      <button class="btn btn-accent" id="btnSend">Підтвердити та надіслати</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Звернення надіслано (локально збережено)</div>
+
+<script>
+/* ====== PWA: sw ====== */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+
+/* ====== Splash 5s ====== */
+setTimeout(()=>{ document.getElementById('splash').style.display='none'; }, 5000);
+
+/* ====== Екран 1 → Екран 2 ====== */
+const overview = document.getElementById('overview');
+const mapEl = document.getElementById('map');
+const fabEl = document.getElementById('fab');
+const goToRaion = () => {
+  overview.classList.remove('active');
+  mapEl.classList.add('active');
+  fabEl.style.display='flex';
+  initMapOnce();
+};
+document.getElementById('odesaRaionPoly').addEventListener('click', goToRaion);
+
+/* ====== Storage ====== */
+const STORE_KEY='eko_od_raion_reports';
+let reports = JSON.parse(localStorage.getItem(STORE_KEY)||'[]');
+const persist = () => localStorage.setItem(STORE_KEY, JSON.stringify(reports));
+
+/* ====== MAP (Leaflet) ====== */
+let map, markers=new Map(), addMode=false, staged=null, inited=false;
+
+/* Приблизний полігон меж Одеського району (для обмеження карти) */
+const ODESA_RAION_POLY = [
+  [46.705, 30.280], [46.790, 30.430], [46.865, 30.650], [46.925, 30.900],
+  [46.920, 31.150], [46.820, 31.250], [46.700, 31.300], [46.560, 31.250],
+  [46.470, 31.120], [46.420, 30.960], [46.380, 30.800], [46.330, 30.640],
+  [46.280, 30.520], [46.300, 30.360], [46.380, 30.280], [46.520, 30.240],
+  [46.620, 30.240], [46.680, 30.250], [46.705, 30.280]
+];
+const bounds = L.latLngBounds(ODESA_RAION_POLY.map(p=>[p[0],p[1]]));
+
+const TrashIcon = L.divIcon({
+  className:'trash-pin',
+  html:`<div style="width:22px;height:22px;border-radius:50%;background:#0f1116;border:2px solid ${getComputedStyle(document.documentElement).getPropertyValue('--accent')};
+    display:flex;align-items:center;justify-content:center;box-shadow:0 6px 14px rgba(0,0,0,.4)">
+      <svg viewBox="0 0 24 24" width="12" height="12" fill="none">
+        <path d="M8 6h8l-1 14H9L8 6z" stroke="#00ffc2" stroke-width="1.6"/>
+        <path d="M6 6h12M10 6V4h4v2" stroke="#00ffc2" stroke-width="1.6"/>
+      </svg>
+    </div>`,
+  iconSize:[22,22], iconAnchor:[11,22], popupAnchor:[0,-18]
+});
+
+function initMapOnce(){
+  if(inited) return;
+  inited = true;
+
+  map = L.map('map', {
+    zoomControl:true, minZoom:9, maxZoom:18,
+    maxBounds: bounds.pad(0.06), maxBoundsViscosity:1.0
+  }).fitBounds(bounds);
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png',
+    { attribution:'© OSM & CARTO' }).addTo(map);
+
+  // Підсвічення району + маска поза межами
+  L.polygon(ODESA_RAION_POLY, {color:'#2b2f3a', weight:1.2, fill:true, fillColor:'#0f1116', fillOpacity:.25}).addTo(map);
+  (function mask(){
+    const world=[[-90,-180],[-90,180],[90,180],[90,-180]];
+    L.polygon([world, ODESA_RAION_POLY], {color:'#000',weight:0,fill:true,fillColor:'#000',fillOpacity:.35,interactive:false}).addTo(map);
+  })();
+
+  // Клік по мапі → форма, якщо увімкнено режим "Позначити"
+  map.on('click', e=>{
+    if(!bounds.contains(e.latlng)) return;
+    if(addMode){ openModal(e.latlng); }
+  });
+
+  // Підняти попередні мітки
+  reports.forEach(addMarker);
+}
+
+/* Маркери */
+function addMarker(rep){
+  const m = L.marker(rep.coords, {icon: TrashIcon}).addTo(map);
+  const img = rep.photo ? `<img src="${rep.photo}" style="max-width:220px;border-radius:10px;border:1px solid #1e2330;margin-top:6px">` : '';
+  m.bindPopup(`
+    <h5>Несанкціоноване сміттєзвалище</h5>
+    <div style="font-size:12px;color:#9eb0c9">ID: <b>${rep.id}</b> · ${rep.time}</div>
+    <div><b>Координати:</b> ${rep.coords[0].toFixed(5)}, ${rep.coords[1].toFixed(5)}</div>
+    ${rep.place?`<div><b>Нас. пункт:</b> ${rep.place}</div>`:''}
+    ${rep.comment?`<div style="margin-top:6px">${rep.comment.replace(/</g,'&lt;')}</div>`:''}
+    ${img}
+  `);
+  markers.set(rep.id, m);
+}
+
+/* Кнопки (хедер і дубль-чіпи) */
+const setAddMode = (v)=>{
+  addMode = v;
+  toast(v ? 'Режим позначення: натисніть на мапу' : 'Режим позначення вимкнено');
+};
+document.getElementById('btnMark').onclick = ()=> setAddMode(!addMode);
+document.getElementById('chipMark').onclick = ()=> setAddMode(!addMode);
+
+function doMyPos(){
+  if(!navigator.geolocation){ toast('Геопозиція недоступна. Виберіть точку на мапі.'); return; }
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const latlng = L.latLng(pos.coords.latitude, pos.coords.longitude);
+    if(!bounds.contains(latlng)){
+      toast('Ваша позиція поза межами району. Оберіть місце на мапі вручну.');
+      map.fitBounds(bounds); return;
+    }
+    map.setView(latlng, 16);
+    openModal(latlng);
+  }, ()=>toast('Не вдалося визначити геопозицію. Дозвольте доступ або натисніть на мапі.'));
+}
+document.getElementById('btnMyPos').onclick = doMyPos;
+document.getElementById('chipMyPos').onclick = doMyPos;
+
+/* ===== Modal ===== */
+const modal = document.getElementById('modal');
+function openModal(latlng){
+  staged = [latlng.lat, latlng.lng];
+  document.getElementById('coords').value = `${staged[0].toFixed(6)}, ${staged[1].toFixed(6)}`;
+  modal.style.display='flex';
+}
+function closeModal(){
+  modal.style.display='none'; staged=null;
+  document.getElementById('place').value='';
+  document.getElementById('comment').value='';
+  document.getElementById('coords').value='';
+  document.getElementById('photoInput').value='';
+  document.getElementById('photoPreview').innerHTML='';
+}
+document.getElementById('btnCancel').onclick = closeModal;
+modal.addEventListener('click', e=>{ if(e.target===modal) closeModal(); });
+
+/* Фото → стиснення ~1024px */
+document.getElementById('photoInput').addEventListener('change', e=>{
+  const f=e.target.files?.[0]; if(!f) return;
+  const img=new Image(); const r=new FileReader();
+  r.onload=()=>{ img.onload=()=>{
+      const max=1024, k=Math.min(1,max/Math.max(img.width,img.height));
+      const c=document.createElement('canvas'); c.width=img.width*k; c.height=img.height*k;
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      const data=c.toDataURL('image/jpeg',0.85);
+      document.getElementById('photoPreview').innerHTML=`<img src="${data}" alt="Фото">`;
+  }; img.src=r.result; }; r.readAsDataURL(f);
+});
+
+/* Надіслати (локально зберегти) */
+document.getElementById('btnSend').onclick = ()=>{
+  if(!staged){ toast('Вкажіть точку на мапі.'); return; }
+  const place = document.getElementById('place').value.trim();
+  const comment = document.getElementById('comment').value.trim();
+  const photo = document.querySelector('#photoPreview img')?.src || null;
+  const rep = { id:'R'+Math.random().toString(36).slice(2,8).toUpperCase(), time:ts(), coords:staged, place, comment, photo };
+  reports.push(rep); persist(); addMarker(rep);
+  closeModal(); toast('Звернення надіслано · додано на мапу');
+};
+
+function ts(){ const d=new Date(); const p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }
+
+/* Toast */
+let toastTimer=null;
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.display='block'; t.style.opacity='1';
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>{ t.style.opacity='0'; t.style.display='none'; }, 2400);
+}
+</script>
+</body>
+</html>
