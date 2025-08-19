@@ -1,6 +1,6 @@
 // Сервис-воркер для GitHub Pages (офлайн ядро + runtime cache)
-const CACHE = 'eko-odrra-v5'; // обновили версию кэша
-const CORE = ['./','./index.html','./manifest.webmanifest'];
+const CACHE = 'eko-odrra-v7'; // обновили версию кэша
+const CORE = ['./','./index.html','./manifest.webmanifest?v=3'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)));
